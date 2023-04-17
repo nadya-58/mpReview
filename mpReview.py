@@ -305,7 +305,8 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     self.selectLocalDatabaseButton = qt.QRadioButton('Use local database')
     self.selectRemoteDatabaseButton = qt.QRadioButton('Use GCP remote server')
     self.selectOtherRemoteDatabaseButton = qt.QRadioButton('Use other remote server')
-    
+    self.selectOtherRemoteDatabaseButton.setChecked(True)
+ 
     # self.gcp = DICOMwebBrowser.GoogleCloudPlatform() # this doesn't work, why?  
     # self.gcp = GoogleCloudPlatform() # this works 
     
@@ -349,11 +350,13 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     
     self.OtherserverUrlLineEdit = qt.QLineEdit()
     databaseGroupBoxLayout.addRow("Other Server URL: ", self.OtherserverUrlLineEdit)
-    self.OtherserverUrlLineEdit.setText('')
+    self.OtherserverUrlLineEdit.setText('http://dcm4chee-service.services.svc:8080/dcm4chee-arc/aets/KAAPANA/rs')
+    # push the value into logic, simulating the edit event 
+    self.otherserverUrl = self.OtherserverUrlLineEdit.text
     self.OtherserverUrlLineEdit.setReadOnly(True)
     
     self.selectOtherRemoteDatabaseOKButton = qt.QPushButton("OK")
-    self.selectOtherRemoteDatabaseOKButton.setEnabled(False)
+    self.selectOtherRemoteDatabaseOKButton.setEnabled(True)
     databaseGroupBoxLayout.addRow(self.selectOtherRemoteDatabaseOKButton)
     
     self.databaseGroupBox.setLayout(databaseGroupBoxLayout)
