@@ -1693,11 +1693,39 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     patientList = list(set(patientList))
       
     return patientList 
+
+  def getStudyUIDsFromKaapanaTasklist(self):
+
+    print('*** parsing Kaapana tasklist.json ***')
+
+    fn_tasklist = os.path.join(os.getenv('WORKFLOW_DIR'),'batch/tasklist.json')
+    if not os.path.exists(fn_tasklist):
+      print('tasklist not found', fn_tasklist)
+      exit(1)
+    f = open(fn_tasklist)
+    j = json.load(f)
+    f.close()
+
+    t_studyUID = []
+
+    for t in j['Tasks']:
+      f = t['Image']
+      #print(f)
+      # studyUID is first component of path
+      f = os.path.split(os.path.split(f)[0])[0]
+      #print(f)
+      t_studyUID.append(f)
+   
+    print('studyUIDs in tasklist:',len(t_studyUID))
+ 
+    return t_studyUID
   
   def getStudyNamesRemoteDatabase(self):
     
     print ('********** Getting the studies to update the study names *******')
-    
+   
+    kaapanaStudyUIDs=self.getStudyUIDsFromKaapanaTasklist()
+     
     # Get the studies 
     offset = 0 
     studies = [] 
@@ -1712,7 +1740,23 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
       studies.extend(subset)
       offset += len(subset) 
     # print ('search_for_studies in remote database')
-    
+
+
+    print(kaapanaStudyUIDs)
+    #print(studies)
+    for s in studies:
+      print(s['00081190']['Value'])
+    print(len(studies))
+    studies_raw = studies
+    studies = []
+    for s in studies_raw:
+      this_id = s['00081190']['Value'][0].split('/')[-1] 
+      print(this_id)
+      if this_id in kaapanaStudyUIDs:
+        studies.append(s)
+    print(len(studies)) 
+
+ 
     # Iterate over each patient ID, get the appropriate list of studies 
     studiesMap = {} 
     ShortNames = [] 
