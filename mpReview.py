@@ -1694,7 +1694,7 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
       
     return patientList 
 
-  def getStudyUIDsFromKaapanaTasklist(self):
+  def getSeriesUIDsFromKaapanaTasklist(self):
 
     print('*** parsing Kaapana tasklist.json ***')
 
@@ -1706,25 +1706,25 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     j = json.load(f)
     f.close()
 
-    t_studyUID = []
+    t_seriesUID = []
 
     for t in j['Tasks']:
       f = t['Image']
       #print(f)
-      # studyUID is first component of path
+      # seriesUID is first component of path
       f = os.path.split(os.path.split(f)[0])[0]
       #print(f)
-      t_studyUID.append(f)
+      t_seriesUID.append(f)
    
-    print('studyUIDs in tasklist:',len(t_studyUID))
+    print('seriesUIDs in tasklist:',len(t_seriesUID))
  
-    return t_studyUID
+    return t_seriesUID
   
   def getStudyNamesRemoteDatabase(self):
     
     print ('********** Getting the studies to update the study names *******')
    
-    kaapanaStudyUIDs=self.getStudyUIDsFromKaapanaTasklist()
+    kaapanaSeriesUIDs=self.getSeriesUIDsFromKaapanaTasklist()
      
     # Get the studies 
     offset = 0 
@@ -1742,18 +1742,24 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     # print ('search_for_studies in remote database')
 
 
-    print(kaapanaStudyUIDs)
-    #print(studies)
+    print(kaapanaSeriesUIDs)
+    print(studies)
     for s in studies:
       print(s['00081190']['Value'])
     print(len(studies))
     studies_raw = studies
     studies = []
     for s in studies_raw:
-      this_id = s['00081190']['Value'][0].split('/')[-1] 
-      print(this_id)
-      if this_id in kaapanaStudyUIDs:
-        studies.append(s)
+      this_studyid = s['00081190']['Value'][0].split('/')[-1] 
+      print(this_studyid)
+      seriesUIDs = self.getTagValue(s, 'SeriesInstanceUID')
+      print(seriesUIDs)
+      print('--')
+
+
+      #if this_id in kaapanaStudyUIDs:
+      #  studies.append(s)
+   
     print(len(studies)) 
 
  
