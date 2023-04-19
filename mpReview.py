@@ -1695,7 +1695,7 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     return patientList 
 
   def getSeriesUIDsFromKaapanaTasklist(self):
-
+    # for v1 version of tasklist.json
     print('*** parsing Kaapana tasklist.json ***')
 
     fn_tasklist = os.path.join(os.getenv('WORKFLOW_DIR'),'batch/tasklist.json')
@@ -1715,17 +1715,50 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
       f = os.path.split(os.path.split(f)[0])[0]
       #print(f)
       t_seriesUID.append(f)
-   
+
     print('seriesUIDs in tasklist:',len(t_seriesUID))
- 
+
     return t_seriesUID
+
+
+  def getStudyUIDsFromKaapanaTasklist(self):
+
+    print('*** parsing Kaapana tasklist.json ***')
+
+    fn_tasklist = os.path.join(os.getenv('WORKFLOW_DIR'),'batch/tasklist.json')
+    if not os.path.exists(fn_tasklist):
+      print('tasklist not found', fn_tasklist)
+      exit(1)
+    f = open(fn_tasklist)
+    j = json.load(f)
+    f.close()
+
+    t_studyUID = []
+
+    for t in j['Tasks']:
+      #f = t['Image']
+      f = t['StudyInstanceUID']
+      #print(f)
+      # seriesUID is first component of path
+      #f = os.path.split(os.path.split(f)[0])[0]
+      #print(f)
+      t_studyUID.append(f)
+  
+
+    t_studyUID = list(set(t_studyUID))
+    print(t_studyUID) 
+    print('studyUIDs in tasklist:',len(t_studyUID))
+ 
+    return t_studyUID
   
   def getStudyNamesRemoteDatabase(self):
     
     print ('********** Getting the studies to update the study names *******')
    
-    kaapanaSeriesUIDs=self.getSeriesUIDsFromKaapanaTasklist()
-     
+    #kaapanaSeriesUIDs=self.getSeriesUIDsFromKaapanaTasklist()
+    
+    kaapanaStudyUIDs=self.getStudyUIDsFromKaapanaTasklist()
+ 
     # Get the studies 
     offset = 0 
     studies = [] 
@@ -1742,7 +1775,6 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     # print ('search_for_studies in remote database')
 
 
-    print(kaapanaSeriesUIDs)
     print(studies)
     for s in studies:
       print(s['00081190']['Value'])
@@ -1752,13 +1784,9 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     for s in studies_raw:
       this_studyid = s['00081190']['Value'][0].split('/')[-1] 
       print(this_studyid)
-      seriesUIDs = self.getTagValue(s, 'SeriesInstanceUID')
-      print(seriesUIDs)
-      print('--')
 
-
-      #if this_id in kaapanaStudyUIDs:
-      #  studies.append(s)
+      if this_studyid in kaapanaStudyUIDs:
+        studies.append(s)
    
     print(len(studies)) 
 
