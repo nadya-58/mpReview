@@ -1300,9 +1300,26 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
           
           print('copy seg dcm file to Kaapana output dir')
           dataset_tmp = pydicom.dcmread(labelFileName)
-          series_uid_tmp = dataset_tmp['SeriesInstanceUID'].value
-          print(series_uid_tmp)
-          print('done!')
+          # for DAG directory purposes, needs seriesUID of the reference image;
+          # labelfile will have a different seriesUID inside!
+          ref = self.refSeriesNumber # this is a string e.g. '4', not int
+          print(ref)
+          print(self.seriesMap)
+          ref_seriesUID = self.seriesMap[ref]['seriesInstanceUID']
+          print(ref_seriesUID)   
+          if ref_seriesUID in self.kaapanaSeriesUIDs:
+            kaapanaOutputDir = os.path.join(os.getenv('WORKFLOW_DIR'),'batch',ref_seriesUID,'slicer-results')
+            cmd1 = '/bin/mkdir -p %s' % kaapanaOutputDir
+            print(cmd1)
+            kaapanaOutputFileName = os.path.join(kaapanaOutputDir, 'result.dcm')
+            os.system(cmd1)
+            cmd2 = '/bin/cp %s %s' % ( labelFileName, kaapanaOutputFileName )
+            print(cmd2)
+            os.system(cmd2)
+          else:
+            print('ERROR: Kaapana has no directory to receive result: ', ref_seriesUID)
+            exit(1)
+          print('done copying to Kaapana')
           
           # Now delete the files from the temporary directory 
           for f in os.listdir(downloadDirectory):
