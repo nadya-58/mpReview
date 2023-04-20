@@ -1295,7 +1295,14 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
           # Upload to remote server 
           # self.copySegmentationsToRemote(labelFileName) # this one uses buckets and DICOM datastores 
           print('uploading seg dcm file to the remote server')
-          self.copySegmentationsToRemoteDicomweb(labelFileName) # this one uses dicomweb client 
+          # Kaapana does not need DICOM send (it works but does not make it to Meta-Dashboard)
+          # self.copySegmentationsToRemoteDicomweb(labelFileName) # this one uses dicomweb client 
+          
+          print('copy seg dcm file to Kaapana output dir')
+          dataset_tmp = pydicom.dcmread(labelFileName)
+          series_uid_tmp = dataset_tmp['SeriesInstanceUID'].value
+          print(series_uid_tmp)
+          print('done!')
           
           # Now delete the files from the temporary directory 
           for f in os.listdir(downloadDirectory):
@@ -1658,19 +1665,19 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     """This function takes as input a single study metadata from dicomweb and 
       a tag_name, and returns the numeric string for that name"""
       
-    if tag_name is "PatientID":
+    if tag_name == "PatientID":
       tag_numeric = '00100020'
-    elif tag_name is "StudyDate":
+    elif tag_name == "StudyDate":
       tag_numeric = '00080020'
-    elif tag_name is "StudyInstanceUID":
+    elif tag_name == "StudyInstanceUID":
       tag_numeric = '0020000D'
-    elif tag_name is "SeriesInstanceUID": 
+    elif tag_name == "SeriesInstanceUID": 
       tag_numeric = '0020000E'
-    elif tag_name is "SeriesNumber":
+    elif tag_name == "SeriesNumber":
       tag_numeric = '00200011'
-    elif tag_name is "SeriesDescription":
+    elif tag_name == "SeriesDescription":
       tag_numeric = '0008103E'
-    elif tag_name is "SOPInstanceUID": 
+    elif tag_name == "SOPInstanceUID": 
       tag_numeric = '00080018'
     
     try:
@@ -1694,34 +1701,7 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
       
     return patientList 
 
-  def getSeriesUIDsFromKaapanaTasklist(self):
-    # for v1 version of tasklist.json
-    print('*** parsing Kaapana tasklist.json ***')
-
-    fn_tasklist = os.path.join(os.getenv('WORKFLOW_DIR'),'batch/tasklist.json')
-    if not os.path.exists(fn_tasklist):
-      print('tasklist not found', fn_tasklist)
-      exit(1)
-    f = open(fn_tasklist)
-    j = json.load(f)
-    f.close()
-
-    t_seriesUID = []
-
-    for t in j['Tasks']:
-      f = t['Image']
-      #print(f)
-      # seriesUID is first component of path
-      f = os.path.split(os.path.split(f)[0])[0]
-      #print(f)
-      t_seriesUID.append(f)
-
-    print('seriesUIDs in tasklist:',len(t_seriesUID))
-
-    return t_seriesUID
-
-
-  def getStudyUIDsFromKaapanaTasklist(self):
+  def getStudyUIDsSeriesUIDsFromKaapanaTasklist(self):
 
     print('*** parsing Kaapana tasklist.json ***')
 
@@ -1734,30 +1714,26 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     f.close()
 
     t_studyUID = []
-
+    t_seriesUID = []
+ 
     for t in j['Tasks']:
-      #f = t['Image']
-      f = t['StudyInstanceUID']
-      #print(f)
-      # seriesUID is first component of path
-      #f = os.path.split(os.path.split(f)[0])[0]
-      #print(f)
-      t_studyUID.append(f)
-  
+      t_studyUID.append(t['StudyInstanceUID'])
+      t_seriesUID.append(t['SeriesUID'])
 
     t_studyUID = list(set(t_studyUID))
+    t_seriesUID = list(set(t_seriesUID))
     print(t_studyUID) 
-    print('studyUIDs in tasklist:',len(t_studyUID))
- 
-    return t_studyUID
+    print(t_seriesUID) 
+
+    print('studyUIDs  in tasklist:',len(t_studyUID))
+    print('seriesUIDs in tasklist:',len(t_seriesUID))
+    return t_studyUID, t_seriesUID
   
   def getStudyNamesRemoteDatabase(self):
     
     print ('********** Getting the studies to update the study names *******')
-   
-    #kaapanaSeriesUIDs=self.getSeriesUIDsFromKaapanaTasklist()
     
-    kaapanaStudyUIDs=self.getStudyUIDsFromKaapanaTasklist()
+    self.kaapanaStudyUIDs, self.kaapanaSeriesUIDs = self.getStudyUIDsSeriesUIDsFromKaapanaTasklist()
  
     # Get the studies 
     offset = 0 
@@ -1774,21 +1750,19 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
       offset += len(subset) 
     # print ('search_for_studies in remote database')
 
-
-    print(studies)
-    for s in studies:
-      print(s['00081190']['Value'])
-    print(len(studies))
+    # filter the studies to the Kaapana studies from tasklist
+    # print(studies)
+    # for s in studies:
+    #   print(s['00081190']['Value'])
+    print('unfiltered:', len(studies))
     studies_raw = studies
     studies = []
     for s in studies_raw:
       this_studyid = s['00081190']['Value'][0].split('/')[-1] 
-      print(this_studyid)
-
-      if this_studyid in kaapanaStudyUIDs:
+      # print(this_studyid)
+      if this_studyid in self.kaapanaStudyUIDs:
         studies.append(s)
-   
-    print(len(studies)) 
+    print('filtered:  ', len(studies)) 
 
  
     # Iterate over each patient ID, get the appropriate list of studies 
