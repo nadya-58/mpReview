@@ -1878,15 +1878,13 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     print('studyUIDs  in tasklist:',len(t_studyUID))
     print('seriesUIDs in tasklist:',len(t_seriesUID))
     return t_studyUID, t_seriesUID
-  
+
+    
   def getStudyNamesRemoteDatabase(self):
     
     print ('********** Getting the studies to update the study names *******')
     
     self.kaapanaStudyUIDs, self.kaapanaSeriesUIDs = self.getStudyUIDsSeriesUIDsFromKaapanaTasklist()
-  def getStudyNamesRemoteDatabase(self):
-    
-    print ('********** Getting the studies to update the study names *******')
     
     # Get the studies 
     offset = 0 
