@@ -1318,10 +1318,10 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
           dataset_tmp = pydicom.dcmread(labelFileName)
           # for DAG directory purposes, needs seriesUID of the reference image;
           # labelfile will have a different seriesUID inside!
-          ref = self.refSeriesNumber # this is a string e.g. '4', not int
+          ref = self.refSeriesNumber # now, refSeriesNumber contains seriesInstanceUID as text
           print(ref)
           print(self.seriesMap)
-          ref_seriesUID = self.seriesMap[ref]['seriesInstanceUID']
+          ref_seriesUID = self.refSeriesNumber # old version: seriesMap[ref]['seriesInstanceUID']
           print(ref_seriesUID)   
           if ref_seriesUID in self.kaapanaSeriesUIDs:
             kaapanaOutputDir = os.path.join(os.getenv('WORKFLOW_DIR'),'batch',ref_seriesUID,'slicer-results')
