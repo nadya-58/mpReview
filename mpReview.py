@@ -350,7 +350,10 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     
     self.OtherserverUrlLineEdit = qt.QLineEdit()
     databaseGroupBoxLayout.addRow("Other Server URL: ", self.OtherserverUrlLineEdit)
-    self.OtherserverUrlLineEdit.setText('')
+    self.OtherserverUrlLineEdit.setText('http://dcm4chee-service.services.svc:8080/dcm4chee-arc/aets/KAAPANA/rs')
+    # push the value into logic, simulating the edit event 
+    self.otherserverUrl = self.OtherserverUrlLineEdit.text
+    #self.OtherserverUrlLineEdit.setText('')
     self.OtherserverUrlLineEdit.setReadOnly(True)
     
     self.selectOtherRemoteDatabaseOKButton = qt.QPushButton("OK")
@@ -1308,7 +1311,31 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
           # Upload to remote server 
           # self.copySegmentationsToRemote(labelFileName) # this one uses buckets and DICOM datastores 
           print('uploading seg dcm file to the remote server')
-          self.copySegmentationsToRemoteDicomweb(labelFileName) # this one uses dicomweb client 
+          # Kaapana does not need DICOM send (it works but does not make it to Meta-Dashboard)
+          # self.copySegmentationsToRemoteDicomweb(labelFileName) # this one uses dicomweb client 
+          
+          print('copy seg dcm file to Kaapana output dir')
+          dataset_tmp = pydicom.dcmread(labelFileName)
+          # for DAG directory purposes, needs seriesUID of the reference image;
+          # labelfile will have a different seriesUID inside!
+          ref = self.refSeriesNumber # this is a string e.g. '4', not int
+          print(ref)
+          print(self.seriesMap)
+          ref_seriesUID = self.seriesMap[ref]['seriesInstanceUID']
+          print(ref_seriesUID)   
+          if ref_seriesUID in self.kaapanaSeriesUIDs:
+            kaapanaOutputDir = os.path.join(os.getenv('WORKFLOW_DIR'),'batch',ref_seriesUID,'slicer-results')
+            cmd1 = '/bin/mkdir -p %s' % kaapanaOutputDir
+            print(cmd1)
+            kaapanaOutputFileName = os.path.join(kaapanaOutputDir, 'result.dcm')
+            os.system(cmd1)
+            cmd2 = '/bin/cp %s %s' % ( labelFileName, kaapanaOutputFileName )
+            print(cmd2)
+            os.system(cmd2)
+          else:
+            print('ERROR: Kaapana has no directory to receive result: ', ref_seriesUID)
+            exit(1)
+          print('done copying to Kaapana')
           
           # Now delete the files from the temporary directory 
           for f in os.listdir(downloadDirectory):
@@ -1824,6 +1851,39 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
       
     return patientList 
   
+  def getStudyUIDsSeriesUIDsFromKaapanaTasklist(self):
+
+    print('*** parsing Kaapana tasklist.json ***')
+
+    fn_tasklist = os.path.join(os.getenv('WORKFLOW_DIR'),'batch/tasklist.json')
+    if not os.path.exists(fn_tasklist):
+      print('tasklist not found', fn_tasklist)
+      exit(1)
+    f = open(fn_tasklist)
+    j = json.load(f)
+    f.close()
+
+    t_studyUID = []
+    t_seriesUID = []
+ 
+    for t in j['Tasks']:
+      t_studyUID.append(t['StudyInstanceUID'])
+      t_seriesUID.append(t['SeriesUID'])
+
+    t_studyUID = list(set(t_studyUID))
+    t_seriesUID = list(set(t_seriesUID))
+    print(t_studyUID) 
+    print(t_seriesUID) 
+
+    print('studyUIDs  in tasklist:',len(t_studyUID))
+    print('seriesUIDs in tasklist:',len(t_seriesUID))
+    return t_studyUID, t_seriesUID
+  
+  def getStudyNamesRemoteDatabase(self):
+    
+    print ('********** Getting the studies to update the study names *******')
+    
+    self.kaapanaStudyUIDs, self.kaapanaSeriesUIDs = self.getStudyUIDsSeriesUIDsFromKaapanaTasklist()
   def getStudyNamesRemoteDatabase(self):
     
     print ('********** Getting the studies to update the study names *******')
@@ -1842,6 +1902,20 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
       studies.extend(subset)
       offset += len(subset) 
     # print ('search_for_studies in remote database')
+    
+     # filter the studies to the Kaapana studies from tasklist
+    # print(studies)
+    # for s in studies:
+    #   print(s['00081190']['Value'])
+    print('unfiltered:', len(studies))
+    studies_raw = studies
+    studies = []
+    for s in studies_raw:
+      this_studyid = s['00081190']['Value'][0].split('/')[-1] 
+      # print(this_studyid)
+      if this_studyid in self.kaapanaStudyUIDs:
+        studies.append(s)
+    print('filtered:  ', len(studies)) 
     
     # Iterate over each patient ID, get the appropriate list of studies 
     studiesMap = {} 
