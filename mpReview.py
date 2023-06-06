@@ -357,7 +357,7 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     self.OtherserverUrlLineEdit.setReadOnly(True)
     
     self.selectOtherRemoteDatabaseOKButton = qt.QPushButton("OK")
-    self.selectOtherRemoteDatabaseOKButton.setEnabled(False)
+    self.selectOtherRemoteDatabaseOKButton.setEnabled(True)
     databaseGroupBoxLayout.addRow(self.selectOtherRemoteDatabaseOKButton)
     
     self.databaseGroupBox.setLayout(databaseGroupBoxLayout)
