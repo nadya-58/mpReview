@@ -734,7 +734,7 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     self.setupMultiVolumeExplorerUI()
     self.setupLabelMapEditorUI()
     self.setupAdvancedSegmentationSettingsUI()
-    self.setupFiducialsUI()
+    # self.setupFiducialsUI()
     # keep here names of the views created by CompareVolumes logic
     self.viewNames = []
     self.segmentationWidgetLayout.addStretch(1)
@@ -833,11 +833,11 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     self.segmentationWidgetLayout.addWidget(self.fiducialsWidget)
 
   def setupCompletionUI(self):
-    self.piradsButton = qt.QPushButton("PI-RADS v2 review form")
-    self.completionWidgetLayout.addWidget(self.piradsButton)
+    # self.piradsButton = qt.QPushButton("PI-RADS v2 review form")
+    # self.completionWidgetLayout.addWidget(self.piradsButton)
 
-    self.qaButton = qt.QPushButton("Quality Assurance form")
-    self.completionWidgetLayout.addWidget(self.qaButton)
+    # self.qaButton = qt.QPushButton("Quality Assurance form")
+    # self.completionWidgetLayout.addWidget(self.qaButton)
 
     self.saveButton = qt.QPushButton("Save")
     self.completionWidgetLayout.addWidget(self.saveButton)
@@ -855,8 +855,8 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
     self.modelsVisibilityButton.connect("toggled(bool)", self.onModelsVisibilityButton)
     self.labelMapVisibilityButton.connect("toggled(bool)", self.onLabelMapVisibilityButton)
     self.labelMapOutlineButton.connect('toggled(bool)', self.setLabelOutline)
-    self.piradsButton.connect('clicked()', self.onPIRADSFormClicked)
-    self.qaButton.connect('clicked()', self.onQAFormClicked)
+    # self.piradsButton.connect('clicked()', self.onPIRADSFormClicked)
+    # self.qaButton.connect('clicked()', self.onQAFormClicked)
     self.saveButton.connect('clicked()', self.onSaveClicked)
     for orientation in self.orientations:
       self.orientationButtons[orientation].connect("clicked()", lambda o=orientation: self.setOrientation(o))
@@ -1213,8 +1213,8 @@ class mpReviewWidget(ScriptedLoadableModuleWidget, ModuleWidgetMixin):
       f.close()
     '''
 
-    savedMessage += "\n " + self.saveTargets(username, timestamp)
-    slicer.util.infoDisplay(savedMessage, windowTitle="mpReview")
+    # savedMessage += "\n " + self.saveTargets(username, timestamp)
+    # slicer.util.infoDisplay(savedMessage, windowTitle="mpReview")
     
   def saveSegmentations(self, timestamp, username, database_type):
     
